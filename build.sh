@@ -33,11 +33,13 @@ $BT/d8 --min-api 24 --lib "$JAR" --output $B $(find $B/classes -name '*.class')
 (cd $B && zip -q unsigned.apk classes.dex)
 
 # 3. Align and sign with a stable key kept outside the repo (same key = updates keep working).
+# The password sits next to the key in $KEYSTORE.pass, never in the repo.
 if [ ! -f "$KEYSTORE" ]; then
   mkdir -p "$(dirname "$KEYSTORE")"
+  (umask 077; openssl rand -hex 16 > "$KEYSTORE.pass")
   keytool -genkeypair -keystore "$KEYSTORE" -alias allowing -keyalg RSA -keysize 2048 -validity 36500 \
-    -storepass allowing -keypass allowing -dname "CN=allowing.cloud" >/dev/null 2>&1
+    -storepass:file "$KEYSTORE.pass" -keypass:file "$KEYSTORE.pass" -dname "CN=allowing.cloud" >/dev/null
 fi
 $BT/zipalign -f 4 $B/unsigned.apk $B/aligned.apk
-$BT/apksigner sign --ks "$KEYSTORE" --ks-pass pass:allowing --key-pass pass:allowing --out allowing.apk $B/aligned.apk
+$BT/apksigner sign --ks "$KEYSTORE" --ks-pass file:"$KEYSTORE.pass" --key-pass file:"$KEYSTORE.pass" --out allowing.apk $B/aligned.apk
 echo "built $(pwd)/allowing.apk ($(du -h allowing.apk | cut -f1))"
