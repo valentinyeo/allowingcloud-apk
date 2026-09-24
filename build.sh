@@ -41,5 +41,5 @@ if [ ! -f "$KEYSTORE" ]; then
     -storepass:file "$KEYSTORE.pass" -keypass:file "$KEYSTORE.pass" -dname "CN=allowing.cloud" >/dev/null
 fi
 $BT/zipalign -f 4 $B/unsigned.apk $B/aligned.apk
-$BT/apksigner sign --ks "$KEYSTORE" --ks-pass file:"$KEYSTORE.pass" --key-pass file:"$KEYSTORE.pass" --out allowing.apk $B/aligned.apk
+$BT/apksigner sign --ks "$KEYSTORE" --ks-pass file:"$KEYSTORE.pass" --out allowing.apk $B/aligned.apk
 echo "built $(pwd)/allowing.apk ($(du -h allowing.apk | cut -f1))"
