@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Policy tests
+        run: javac -d out src/cloud/allowing/app/UrlPolicy.java test/cloud/allowing/app/UrlPolicyTest.java && java -cp out cloud.allowing.app.UrlPolicyTest
+      - name: Compile app sources
+        run: |
+          JAR="$ANDROID_HOME/platforms/android-35/android.jar"
+          if [ ! -f "$JAR" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" >/dev/null
+          fi
+          javac -Xlint:-options -source 11 -target 11 -classpath "$JAR" -d app-classes $(find src -name '*.java')

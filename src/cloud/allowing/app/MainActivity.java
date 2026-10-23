@@ -14,10 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
-// Serves the bundled site from assets/www under a fake https origin,
-// so the app never needs the network.
 public class MainActivity extends Activity {
-    static final String HOST = "appassets.androidplatform.net";
     WebView web;
 
     @Override
@@ -31,15 +28,17 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
                 Uri u = req.getUrl();
-                if (HOST.equals(u.getHost())) return false;
-                try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception e) { }
+                if (UrlPolicy.isAppOrigin(u.getScheme(), u.getHost(), u.getPort())) return false;
+                if (UrlPolicy.opensExternally(u.getScheme(), u.getHost(), u.getPort())) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception e) { }
+                }
                 return true;
             }
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest req) {
                 Uri u = req.getUrl();
-                if (!HOST.equals(u.getHost())) return null;
+                if (!UrlPolicy.isAppOrigin(u.getScheme(), u.getHost(), u.getPort())) return null;
                 String path = u.getPath();
                 if (path == null || path.equals("/") || path.isEmpty()) path = "/index.html";
                 String ext = MimeTypeMap.getFileExtensionFromUrl(path);
@@ -58,7 +57,7 @@ public class MainActivity extends Activity {
         });
         setContentView(web);
         if (state != null) web.restoreState(state);
-        else web.loadUrl("https://" + HOST + "/index.html");
+        else web.loadUrl("https://" + UrlPolicy.HOST + "/index.html");
     }
 
     @Override
