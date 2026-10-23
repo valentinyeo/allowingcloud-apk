@@ -1,0 +1,40 @@
+name: APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          path: allowingcloud-apk
+      - name: Android SDK parts
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" >/dev/null
+      - name: Site files from allowing.cloud
+        run: |
+          mkdir -p allowingcloud/icons
+          cd allowingcloud
+          for f in index abundance areaoflife bcase focuswheel havelist placemat rampage scripting wincounter woulditnotbenice; do
+            curl -fsSL --retry 3 -o "$f.html" "https://allowing.cloud/$f.html"
+          done
+          for f in theme.css theme.js icons/apple-touch-icon.png icons/icon-192.png icons/icon-512.png; do
+            curl -fsSL --retry 3 -o "$f" "https://allowing.cloud/$f"
+          done
+          test "$(grep -li '<html' *.html | wc -l)" -eq 11
+      - name: Build
+        run: SITE="$GITHUB_WORKSPACE/allowingcloud" ./allowingcloud-apk/build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: allowing-unsigned
+          path: allowingcloud-apk/allowing-unsigned.apk
+          if-no-files-found: error
