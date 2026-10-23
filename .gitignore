@@ -2,3 +2,5 @@ build/
 *.apk
 *.idsig
 *.jks
+out/
+app-classes/
